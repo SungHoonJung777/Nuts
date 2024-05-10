@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vam.mapper.ProductMapper">
+	<select id="newProductList"
+		resultType="com.vam.model.ProductVO">
+		select * from
+		new_pro_view
+	</select>
+
+
+
+	<select id="bestProductList"
+		resultType="com.vam.model.ProductVO">
+		select * from best_pro_view
+	</select>
+
+	<!-- 상품 정보 -->
+	<select id="getGoodsInfo" resultType="com.vam.model.ProductVO">
+
+		select a.pillID, a.pillNAME, a.companyID, b.companyNAME, a.PUBLEYEAR,
+		a.PUBLISHER, a.CATECODE, c.CATENAME, a.pillPRICE, a.pillSTOCK,
+		a.pillDISCOUNT, a.pillINTRO, a.pillCONTENTS,a.image
+		from nuts_pill a left outer join nuts_company b on a.companyId = b.companyId
+		left outer join nuts_pcate c on a.catecode = c.catecode
+		where pillid = ${pillId}
+
+	</select>
+	
+	<insert id="productEnroll">
+
+		<selectKey resultType="int" keyProperty="pillId"
+			order="AFTER">
+
+
+		</selectKey>
+
+		insert into nuts_pill(pillId,pillName, companyId, publeYear,
+		publisher, cateCode, pillPrice, pillStock, pillDiscount, pillIntro,
+		pillContents)
+		values(pill_seq.nextval,#{pillName},#{companyId},
+		#{publeYear},#{publisher},#{cateCode},#{pillPrice},#{pillStock},#{pillDiscount},#{pillIntro},#{pillContents})
+
+	</insert>
+
+	<select id="cateList" resultType="com.vam.model.CateVO">
+
+		select * from nuts_pcate order
+		by catecode
+
+	</select>
+
+	<select id="goodsGetList" resultType="com.vam.model.ProductVO">
+  	
+	  	<![CDATA[
+		select * from(
+		    select /*+INDEX_DESC(nuts_pill SYS_C007551)*/ rownum as rn, pillId, pillName,
+		        (select companyName from nuts_company where nuts_pill.companyId = nuts_company.companyId) companyName,
+		        (select cateName from nuts_pcate where nuts_pill.cateCode = nuts_pcate.cateCode) cateName,pillStock,regDate
+		    from nuts_pill 
+		    where 
+		]]>
+
+		<if test="keyword != null">
+
+			pillName like '%' || #{keyword} || '%' and
+
+		</if>
+		     
+		<![CDATA[    
+		    rownum <= #{pageNum} * #{amount} 
+		    )
+		where rn > (#{pageNum} -1) * #{amount}		  	
+  		]]>
+
+	</select>
+
+	<!-- 상품 총 개수 -->
+	<select id="goodsGetTotal" resultType="int">
+
+		select count(*) from nuts_pill
+
+		<if test="keyword != null">
+
+			where pillName like '%' || #{keyword} || '%'
+		</if>
+
+	</select>
+
+	<select id="goodsGetDetail" resultType="com.vam.model.ProductVO">
+	    SELECT
+	        pillId, pillName,
+	        (SELECT companyName FROM nuts_company WHERE companyId = nuts_pill.companyId) AS companyName,
+	        companyId, publeYear, publisher, cateCode, pillPrice, pillStock,
+	        pillDiscount, pillIntro, pillContents, regDate, updateDate
+	    FROM
+	        nuts_pill
+	    WHERE
+	        pillId = #{pillId}
+	</select>
+
+
+
+
+	<update id="goodsModify">
+	    UPDATE nuts_pill
+	    SET
+	        pillName = #{pillName},
+	        companyId = #{companyId},
+	        publeYear = #{publeYear},
+	        publisher = #{publisher},
+	        cateCode = ${cateCode},
+	        pillPrice = #{pillPrice},
+	        pillStock = #{pillStock},
+	        pillDiscount = #{pillDiscount},
+	        pillIntro = #{pillIntro},
+	        pillContents = #{pillContents},
+	        updateDate = sysdate
+	    WHERE
+	        pillId = ${pillId}
+	</update>
+
+		
+		<delete id="goodsDelete">
+			 delete from nuts_pill where pillId = #{pillId} 
+		</delete> 
+	
+		<delete id="companyDelete"> 
+			delete from nuts_company where companyId  = #{companyId}
+		 </delete> 
+		 
+		<insert id="imageEnroll">
+		
+			<selectKey resultType="int" keyProperty="pillId" order="AFTER"> 
+			
+				SELECT MAX(pillId) FROM nuts_pill 
+				
+			</selectKey> 
+			
+			insert into nuts_image(pillId, fileName, uploadPath, uuid) 
+			values (#{pillId}, #{fileName}, #{uploadPath}, #{uuid}) 
+		
+		</insert>
+		
+		 <select id="checkFileList" resultType="com.vam.model.AttachImageVO">
+		 	select * from nuts_image where 
+		 	
+			uploadpath = to_char(sysdate -1, 'yyyy\mm\dd')
+			
+		 </select> 
+		 
+		 <select id="getAttachInfo" resultType="com.vam.model.AttachImageVO">
+		 
+		 	 	select * from nuts_image where pillId = #{pillId} 
+		  
+		 </select>
+		  
+		  <delete id="deleteImageAll">
+	
+			delete FROM nuts_image where pillId = #{pillId}
+		
+		</delete>
+		   <!-- 주문 리스트 <select id="getOrderList" resultType="com.nuts.Member.OrderDTO"> 
+		<![CDATA[ select * from( select rownum rn, orderId, memberId, orderstate, 
+		orderdate from nuts_order where rownum <= #{pageNum} * #{amount} ]]> <if 
+		test="keyword != null"> and memberId like '%'||#{keyword}||'%' </if> <![CDATA[ 
+		order by orderdate desc ) where rn > (#{pageNum} -1) * #{amount} ]]> </select> 
+		상품 총 개수 <select id="getOrderTotal" resultType="int"> select count(*) from 
+		nuts_order <if test="keyword != null"> where memberId like '%'||#{keyword}||'%' 
+		</if> </select> -->
+
+</mapper>
+
+

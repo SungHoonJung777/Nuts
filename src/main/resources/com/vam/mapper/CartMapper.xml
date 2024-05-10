@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="com.vam.mapper.CartMapper">
+
+	<!-- 카트 추가 -->
+	<insert id="addCart">
+	
+		insert into nuts_cart(cartId,memberId, pillId, pillCount)
+		values(cart_seq.nextval,#{memberId}, #{pillId}, #{pillCount}) 
+	
+	</insert>
+	
+	
+	<!-- 카트 삭제 -->
+	<delete id="deleteCart">
+	
+		delete from nuts_cart where cartId = #{cartId}
+	
+	</delete>
+	
+	<!-- 카트 수량 수정 -->
+	<update id="modifyCount">
+	
+		update nuts_cart set pillCount=#{pillCount} where cartId = #{cartId}
+	
+	</update>
+	
+	
+	<!-- 카트 목록 -->
+	<select id="getCart" resultType="com.vam.model.CartDTO">
+	
+		select a.cartId, a.memberId, a.pillId, a.pillCount, b.pillName, b.pillPrice, b.pillDiscount
+		from nuts_cart a left outer join nuts_pill b on a.pillId = b.pillId
+		where memberId = #{memberId}	
+	
+	</select>
+	
+	<!-- 카트 확인 -->
+	<select id="checkCart" resultType="com.vam.model.CartDTO">
+	
+		select * from nuts_cart 
+		where memberId = #{memberId} and pillId = #{pillId}
+	
+	</select>
+		<delete id="deleteOrderCart">
+	
+		delete from nuts_cart where memberId = #{memberId} and pillId = #{pillId}
+	
+	</delete>	
+  </mapper>

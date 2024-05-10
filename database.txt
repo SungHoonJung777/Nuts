@@ -1,0 +1,174 @@
+
+CREATE TABLE nuts_MEMBER(
+  memberId VARCHAR2(50),
+  memberPw VARCHAR2(100) NOT NULL,
+  memberName VARCHAR2(30) NOT NULL,
+  memberMail VARCHAR2(100) NOT NULL,
+  memberAddr1 VARCHAR2(100) NOT NULL,
+  memberAddr2 VARCHAR2(100) NOT NULL,
+  memberAddr3 VARCHAR2(100) NOT NULL,
+  adminCk NUMBER NOT NULL,
+  regDate DATE NOT NULL,
+  money number NOT NULL,
+  point number NOT NULL,
+  PRIMARY KEY(memberId)
+);
+commit;
+
+create sequence pill_seq start with 1;
+create table nuts_pill(
+    pillid number primary key,
+    pillname varchar2(50)   not null,
+    companyId number,
+    publeYear Date not null,
+    publisher varchar2(70) not null,
+    cateCode varchar2(30),
+    pillprice number not null,
+    pillstock number not null,
+    pillDiscount number(2,2),
+    pillIntro clob,
+    pillContents clob,
+    regDate date default sysdate,
+    updateDate date default sysdate,
+    image       varchar2(50)  default 'default.jpg',
+    useyn       char(1)       default 'y',
+    bestyn      char(1)       default 'n',
+    indate      date          default sysdate,
+    kind       char(1)
+);
+-- 베스트 상품
+create or replace view best_pro_view
+as
+select pillid, pillname, pillprice, image 
+from( select rownum, pillid, pillname, pillprice, image 
+      from nuts_pill  
+      where bestyn='y' 
+      order by indate desc)
+where  rownum <=8;
+
+-- 신상품
+create or replace view new_pro_view
+as
+select pillid, pillname, pillprice, image 
+from( select rownum, pillid, pillname, pillprice, image 
+      from nuts_pill  
+      where useyn='y' 
+      order by indate desc)
+where  rownum <=4;
+commit;
+
+insert into nuts_pill(pillid, companyId , pillname, kind, pillprice,publeyear ,publisher,catecode,pillstock, pilldiscount,image, bestyn,pillintro,pillcontents) values(
+pill_seq.nextval, '4','California Gold Nutrition Lutein', '1' 
+, '15000' ,'23/05/03','2','101001', '22','0.02','DoctorsBestGumiLutein.jpg', 'y','<p>임상 실험을 거친 균주 Jarro-Dophilus® EPS는 임상 실험을 거친 균주로 만들어진 상온 보관
+						가능한 다균주 프로바이오틱입니다. Jarro-Dophilus® EPS는 8가지 프로바이오틱 생물종, 즉 락토바실러스,
+						비피도박테리움, 락티카제이바실러스‡, 락티플란티바실러스‡, 락토코커스, 페디오코커스를 혼합하여 각각의 균주는 과학적인
+						연구를 통해 임상 검증되었으며, 장과 면역 건강에 미치는 긍정적인 영향에 따라 균주 명칭(예: R0011)이
+						붙여졌습니다.<br> 공식적인 재분류를 기초로 업데이트. Enhanced Probiotic System™</p>','<p>Jarro-Dophilus® EPS는 독점 기술인 EnteroGuard® 코팅, 공기와 수분의 침투를 막아 주는
+						블리스터 포장 및 실온에서 안정성이 우수한 균주를 사용하는 Enhanced Probiotic System™
+						포뮬라입니다. 이를 통해, 최대량의 프로바이오틱 균주를 장내에 전달하여 완전한 효과를 낼 수 있습니다.</p>');
+
+commit;
+
+
+create table nuts_nation(
+    nationId varchar2(2) primary key,
+    nationName varchar2(50)
+);
+ commit;
+-- 국가 테이블 데이터 삽입
+insert into nuts_nation values ('01', '국산');
+insert into nuts_nation values ('02', '해외');
+
+
+create table nuts_company(
+    companyId number primary key,
+    companyName varchar2(50),
+    nationId varchar2(2),
+    companyIntro long,
+    foreign key (nationId) references nuts_nation(nationId)
+);
+select * from nuts_company;
+insert into nuts_company(companyId, companyName, nationId, companyIntro) 
+    values (company_seq.nextval, '나우푸드','01', '루테인');
+alter table nuts_company add regDate date default sysdate;
+alter table nuts_company modify regDate date default sysdate;
+alter table nuts_company add updateDate date default sysdate;
+commit;
+alter table nuts_product add cateCode varchar2(30);
+
+create table nuts_bcate(
+    tier number(1) not null,
+    cateName varchar2(30) not null,
+    cateCode varchar2(30) not null,
+    cateParent varchar2(30) ,
+    primary key(cateCode),
+    foreign key(cateParent) references nuts_bcate(cateCode) 
+);
+alter table nuts_product add foreign key (company) references nuts_company(companyId);
+alter table nuts_product add foreign key (cateCode) references nuts_bcate(cateCode);
+select * from nuts_product;
+alter table nuts_product add foreign key (companyId) references nuts_company(companyName);
+
+SELECT * FROM USER_INDEXES WHERE TABLE_NAME = 'nuts_product';
+
+    create table nuts_image(
+        pillId int ,
+        fileName varchar2(100) not null,
+        uploadPath varchar2(200) not null,
+        uuid varchar2(100)not null ,
+        primary key (uuid),
+        foreign key (pillId) references nuts_pill(pillId)
+    );
+
+    create sequence cart_seq start with 1 INCREMENT by 1;
+    create table nuts_cart(
+    cartId number primary key,
+    memberId varchar2(50),
+    pillId number,
+    pillCount number,
+    foreign key (memberId) references nuts_member(memberId),
+    foreign key (pillId) references nuts_pill(pillId)
+);
+
+alter table nuts_cart add unique (memberId, pillId);
+
+
+create table nuts_order(
+    orderId varchar2(50) primary key,
+    addressee varchar2(50) not null,
+    memberId varchar2(50),
+    memberAddr1 varchar2(100) not null,
+    memberAddr2 varchar2(100) not null,
+    memberAddr3 varchar2(100) not null,
+    orderState varchar2(30) not null,
+    deliveryCost number not null,
+    usePoint number not null,
+    orderDate date default sysdate,
+    FOREIGN KEY (memberId)REFERENCES nuts_member(memberId)
+);
+
+create sequence order_seq start with 1 INCREMENT by 1;
+create table nuts_orderItem(
+    orderItemId number primary key,
+    orderId varchar2(50),
+    pillId number,
+    pillCount number not null,
+    pillPrice number not null,
+    pillDiscount number not null,
+    savePoint number not null,
+    FOREIGN KEY (orderId) REFERENCES nuts_order(orderId),
+    FOREIGN KEY (pillId) REFERENCES nuts_pill(pillId)
+);
+
+create sequence qna_seq start with 1;
+create table nuts_qna (
+  qseq        number(5)    primary key,  -- 글번호 
+  subject     varchar(300),            -- 제목
+  content     varchar(1000),          -- 문의내용
+  reply       varchar(1000),           -- 답변내용
+  memberId          varchar(20),                 -- 작성자(FK : member.id) 
+  rep         char(1)       default '1',        --1:답변 무  2:답변 유  
+  indate      date default  sysdate     -- 작성일
+); 
+
+alter table nuts_qna add foreign key (memberId) references nuts_member(memberId);

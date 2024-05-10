@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="com.vam.mapper.CompanyMapper">
+  	<insert id="companyEnroll">
+    insert into nuts_company(companyId, companyName, nationId, companyIntro) 
+    values (company_seq.nextval, #{companyName}, #{nationId}, #{companyIntro})
+	</insert>
+
+         <select id="companyGetList" resultType="com.vam.model.CompanyVO">
+      
+      <![CDATA[
+          select * from (
+              select /*+INDEX_DESC(nuts_company 인덱스명) */ 
+                  rownum as rn, companyid, companyname, nationid, regdate, updatedate
+            from nuts_company
+            where
+             
+    ]]>         
+            <if test="keyword != null">
+                companyname like '%'||#{keyword}||'%' and
+            </if>
+            
+    <![CDATA[        
+             rownum <= #{pageNum}*#{amount}
+            )
+        where rn > (#{pageNum} - 1) * #{amount}
+      ]]>
+      
+      </select>
+      
+       <select id="companyGetTotal" resultType="int">
+      
+          select count(*) from nuts_company
+          
+          <if test="keyword != null">
+          
+             where companyname like '%' || #{keyword} || '%'
+          
+          </if>
+          
+      </select> 
+      
+        <select id="companyGetDetail" resultType="com.vam.model.CompanyVO">
+  	
+  		select * from nuts_company where companyid = #{companyId}
+  	
+  	</select>
+  	
+  	<update id="companyModify">
+  	
+  		update nuts_company set companyName=#{companyName}, nationId=#{nationId}, companyIntro=#{companyIntro}, updatedate=sysdate where companyId = #{companyId}
+  	
+  	</update> 
+  	
+  	
+  	<delete id="companyDelete">
+  	
+  		delete from nuts_company where companyId = #{companyId}
+  	
+  	</delete>
+  </mapper>
